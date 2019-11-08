@@ -1,0 +1,6 @@
+88765	McEinstein, A	SFEN
+88764	McFeynman, R	SFEN
+88763	McNewton, I	SFEN
+88762	McHawking, S	SYEN
+88761	McEdison, A	SYEN
+88760	McDarwin, C	SYEN
