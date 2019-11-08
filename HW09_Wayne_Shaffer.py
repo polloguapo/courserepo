@@ -20,37 +20,40 @@ class Repository:
         self.instructors = []
         self.students = []
         
+        self.read_data_files(dir_path)
+
+    def read_data_files(self, dir_path):
         #read instructors from file
-        fullpath = join(dir_path, "instructors.txt")
-        fp = open(fullpath, "r")
-        with fp:
-            for line in fp:
-                items = line.strip().split("\t")
-                instructor = Instructor(items[0], items[1], items[2])
-                self.instructors.append(instructor)
+        filename = join(dir_path, "instructors.txt")
+        for cwid, name, department in \
+                self.file_reading_gen(filename, fields=3, sep="\t", \
+                                      header=False):
+            instructor = Instructor(cwid, name, department)
+            self.instructors.append(instructor)
         
         #read students from file
-        fullpath = join(dir_path, "students.txt")
-        fp = open(fullpath, "r")
-        with fp:
-            for line in fp:
-                items = line.strip().split("\t")
-                student = Student(items[0], items[1], items[2])
-                self.students.append(student)
+        filename = join(dir_path, "students.txt")
+        for cwid, name, major in \
+                self.file_reading_gen(filename, fields=3, sep="\t", \
+                                      header=False):
+            student = Student(cwid, name, major)
+            self.students.append(student)
 
         #read student grades from file
-        fullpath = join(dir_path, "grades.txt")
-        fp = open(fullpath, "r")
-        with fp:
-            for line in fp:
-                items = line.strip().split("\t")
-                for student in self.students:
-                    if student.cwid == items[0]:
-                        student.add_grade(items[1], items[2])
-                for instructor in self.instructors:
-                    if instructor.cwid == items[3]:
-                        instructor.add_course(items[1], 1)
-
+        filename = join(dir_path, "grades.txt")
+        for cwid, course_id, grade, instructor_id in \
+                    self.file_reading_gen(filename, fields=4, sep="\t", \
+                                          header=False):
+            #add grade to the appropriate student's class
+            for student in self.students:
+                if student.cwid == cwid:
+                    student.add_grade(course_id, grade)
+            
+            #add course to the instructor's list of courses taught
+            for instructor in self.instructors:
+                if instructor.cwid == instructor_id:
+                    instructor.add_course(course_id)
+    
     def file_reading_gen(self, path, fields, sep=',', header=False):
         """ This generator yields each line of an input file one at a time
             as long as the file exists, and each line has the exact number
@@ -140,18 +143,28 @@ class Instructor(Person):
 def main():
     """ Run some testing code to display data from repositories """
     print("Stevens Institute of Technology")
-    stevens = Repository("./Stevens")
-    result_table = stevens.pretty_print("instructors")
-    print(result_table)
-    result_table = stevens.pretty_print("students")
-    print(result_table)
     
-    print("NJIT")
-    njit = Repository("./NJIT")
-    result_table = njit.pretty_print("instructors")
-    print(result_table)
-    #result_table = njit.pretty_print("students")
-    #print(result_table)
+    try:
+        stevens = Repository("./Stevens")
+    except FileNotFoundError:
+        print("ERROR:  Unable to access Stevens repository")
+    else:
+        result_table = stevens.pretty_print("instructors")
+        print(result_table)
+        result_table = stevens.pretty_print("students")
+        print(result_table)
     
+    print("Missing University")
+    
+    try:
+        corrupted = Repository("./Missing")
+    except FileNotFoundError:
+        print("ERROR:  Unable to access Missing University")
+    else:
+        result_table = corrupted.pretty_print("instructors")
+        print(result_table)
+        result_table = corrupted.pretty_print("students")
+        print(result_table)
+
 if __name__ == "__main__":
     main()
