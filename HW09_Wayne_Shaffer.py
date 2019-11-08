@@ -19,8 +19,7 @@ class Repository:
         
         self.instructors = []
         self.students = []
-        #self.classes = []
-
+        
         #read instructors from file
         fullpath = join(dir_path, "instructors.txt")
         fp = open(fullpath, "r")
@@ -51,6 +50,31 @@ class Repository:
                 for instructor in self.instructors:
                     if instructor.cwid == items[3]:
                         instructor.add_course(items[1], 1)
+
+    def file_reading_gen(self, path, fields, sep=',', header=False):
+        """ This generator yields each line of an input file one at a time
+            as long as the file exists, and each line has the exact number
+            of fields specified in 'fields'
+        """
+        try:
+            input_file = open(path, 'r')
+        except IOError:
+            raise FileNotFoundError("ERROR: File {path} not found while executing \
+                                     file_reading_gen.")
+        line_number = 1
+
+        with input_file:
+            for line in input_file:
+                if((header != True) or (line_number != 1)):
+                    field_values = line.strip("\n").split(sep)
+    
+                    #correct number of fields?
+                    if(len(field_values) != fields):
+                        raise ValueError(f"ValueError: {path} has {len(field_values)} fields on line {line_number}, but should have {fields} fields.")
+                    else:
+                        yield field_values
+
+                line_number += 1
 
     def add_instructor(self, cwid, name):
         """ Manually add an instructor to the repository """
