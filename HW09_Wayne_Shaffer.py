@@ -109,33 +109,27 @@ class Repository:
         return table
 
 
-class Person():
-    """ Implementation of Person parent class, which can be subclassed. """
-    def __init__(self, cwid, name):
-        """ Initialization code for Person class """
-        self.name = name
-        self.cwid = cwid
-
-
-class Student(Person):
+class Student():
     """ Implementation of students class, derived from class Person """
     def __init__(self, cwid, name, major=None):
+        self.cwid = cwid
+        self.name = name
         self.major = major
         self.grade_list = dict()
-        super().__init__(cwid, name)
-
+        
     def add_grade(self, course_id, grade=None):
         """ Manually add a grade to the student """
         self.grade_list[course_id] = grade
 
-class Instructor(Person):
+class Instructor():
     """ Implementation of instructors class, derived from class Person """
     def __init__(self, cwid, name, department=None):
         """ Initialization code for Instructor class """
+        self.cwid = cwid
+        self.name = name
         self.department = department
         self.course_list = defaultdict(int)
-        super().__init__(cwid, name)
-
+        
     def add_course(self, course_id, increment=1):
         """ Manually add a course to the instructor """
         self.course_list[course_id] += increment
