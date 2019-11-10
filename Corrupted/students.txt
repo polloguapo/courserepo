@@ -1,0 +1,10 @@
+10103	Baldwin, C	SFEN	pass
+10115	Wyatt, X	SFEN	fail
+10172	Forbes, I	SFEN	fail
+10175	Erickson, D	SFEN	pass
+10183	Chapman, O	SFEN	pass
+11399	Cordova, I	SYEN	pass
+11461	Wright, U	SYEN	pass
+11658	Kelly, P	SYEN	fail
+11714	Morton, A	SYEN	pass
+11788	Fuller, E	SYEN	fail

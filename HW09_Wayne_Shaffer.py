@@ -7,6 +7,16 @@ from collections import defaultdict
 from prettytable import PrettyTable
 
 
+class StudentNotFoundError(Exception):
+    """ Raised when a student is not found """
+    pass
+
+
+class InstructorNotFoundError(Exception):
+    """ Raised when an instructor is not found """
+    pass
+
+
 class Repository:
     """ Implementation of a repository class.  This is a container
         to hold students, instructors, and classes in one place for
@@ -25,19 +35,27 @@ class Repository:
     def read_data_files(self, dir_path):
         #read instructors from file
         filename = join(dir_path, "instructors.txt")
-        for cwid, name, department in \
-                self.file_reading_gen(filename, fields=3, sep="\t", \
-                                      header=False):
-            instructor = Instructor(cwid, name, department)
-            self.instructors.append(instructor)
+        try:
+            for cwid, name, department in \
+                    self.file_reading_gen(filename, fields=3, sep="\t", \
+                                          header=False):
+                instructor = Instructor(cwid, name, department)
+                self.instructors.append(instructor)
+        except ValueError:
+            print("Error reading instructors.txt.  Exiting.")
+            return
         
         #read students from file
         filename = join(dir_path, "students.txt")
-        for cwid, name, major in \
-                self.file_reading_gen(filename, fields=3, sep="\t", \
-                                      header=False):
-            student = Student(cwid, name, major)
-            self.students.append(student)
+        try:
+            for cwid, name, major in \
+                    self.file_reading_gen(filename, fields=3, sep="\t", \
+                                          header=False):
+                student = Student(cwid, name, major)
+                self.students.append(student)
+        except ValueError:
+            print("Error reading students.txt.  Exiting.")
+            return
 
         #read student grades from file
         filename = join(dir_path, "grades.txt")
@@ -45,14 +63,22 @@ class Repository:
                     self.file_reading_gen(filename, fields=4, sep="\t", \
                                           header=False):
             #add grade to the appropriate student's class
+            found = False
             for student in self.students:
                 if student.cwid == cwid:
+                    found = True
                     student.add_grade(course_id, grade)
-            
+            if not found:
+                print(f"ERROR:  No student with CWID {cwid} in students.txt.  Skipped.")
+
             #add course to the instructor's list of courses taught
+            found = False
             for instructor in self.instructors:
                 if instructor.cwid == instructor_id:
+                    found = True
                     instructor.add_course(course_id)
+            if not found:
+                print(f"ERROR: No instructor with CWID {instructor_id} in instructors.txt. Skipped.")
     
     def file_reading_gen(self, path, fields, sep=',', header=False):
         """ This generator yields each line of an input file one at a time
@@ -100,7 +126,7 @@ class Repository:
             table = PrettyTable(field_names=["CWID", "Name", "Completed Courses"])
             for student in self.students:
                 courses = []
-                for course_id in student.grade_list:
+                for course_id in sorted(student.grade_list):
                     courses += [course_id]
                 table.add_row([student.cwid, student.name, courses])
         else:
@@ -147,17 +173,31 @@ def main():
         print(result_table)
         result_table = stevens.pretty_print("students")
         print(result_table)
-    
+
     print("Missing University")
-    
+
     try:
-        corrupted = Repository("./Missing")
+        missing = Repository("./Missing")
     except FileNotFoundError:
         print("ERROR:  Unable to access Missing University")
     else:
+        result_table = missing.pretty_print("instructors")
+        print(result_table)
+        result_table = missing.pretty_print("students")
+        print(result_table)
+        
+    print("Corrupted University")
+    
+    try:
+        corrupted = Repository("./Corrupted")
+    except FileNotFoundError:
+        print("ERROR:  Unable to access Corrupted University")
+    else:
         result_table = corrupted.pretty_print("instructors")
+        result_table.print_empty = False
         print(result_table)
         result_table = corrupted.pretty_print("students")
+        result_table.print_empty = False
         print(result_table)
 
 if __name__ == "__main__":

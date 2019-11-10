@@ -1,0 +1,6 @@
+98765	west	Einstein, A	SFEN
+98764	west	Feynman, R	SFEN
+98763	east	Newton, I	SFEN
+98762	west	Hawking, S	SYEN
+98761	west	Edison, A	SYEN
+98760	east	Darwin, C	SYEN
