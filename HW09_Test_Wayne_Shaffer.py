@@ -13,7 +13,6 @@ class TestRepository(unittest.TestCase):
         
     def test_bad_path(self):
         """ Test cases for bad directory path """
-        passed = False
         try:
             self.test_repo = Repository("./Missing")
         except FileNotFoundError:
