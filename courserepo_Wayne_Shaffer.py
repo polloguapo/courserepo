@@ -7,16 +7,6 @@ from collections import defaultdict
 from prettytable import PrettyTable
 
 
-class StudentNotFoundError(Exception):
-    """ Raised when a student is not found """
-    pass
-
-
-class InstructorNotFoundError(Exception):
-    """ Raised when an instructor is not found """
-    pass
-
-
 class Repository:
     """ Implementation of a repository class.  This is a container
         to hold students, instructors, and classes in one place for
@@ -29,7 +19,8 @@ class Repository:
         
         self.instructors = []
         self.students = []
-        
+        self.majors = []
+
         self.read_data_files(dir_path)
 
     def read_data_files(self, dir_path):
@@ -37,8 +28,8 @@ class Repository:
         filename = join(dir_path, "instructors.txt")
         try:
             for cwid, name, department in \
-                    self.file_reading_gen(filename, fields=3, sep="\t", \
-                                          header=False):
+                    self.file_reading_gen(filename, fields=3, sep="|", \
+                                          header=True):
                 instructor = Instructor(cwid, name, department)
                 self.instructors.append(instructor)
         except ValueError:
@@ -49,8 +40,8 @@ class Repository:
         filename = join(dir_path, "students.txt")
         try:
             for cwid, name, major in \
-                    self.file_reading_gen(filename, fields=3, sep="\t", \
-                                          header=False):
+                    self.file_reading_gen(filename, fields=3, sep=";", \
+                                          header=True):
                 student = Student(cwid, name, major)
                 self.students.append(student)
         except ValueError:
@@ -60,8 +51,8 @@ class Repository:
         #read student grades from file
         filename = join(dir_path, "grades.txt")
         for cwid, course_id, grade, instructor_id in \
-                    self.file_reading_gen(filename, fields=4, sep="\t", \
-                                          header=False):
+                    self.file_reading_gen(filename, fields=4, sep="|", \
+                                          header=True):
             #add grade to the appropriate student's class
             found = False
             for student in self.students:
@@ -79,7 +70,19 @@ class Repository:
                     instructor.add_course(course_id)
             if not found:
                 print(f"ERROR: No instructor with CWID {instructor_id} in instructors.txt. Skipped.")
-    
+
+        #read majors from file
+        filename = join(dir_path, "majors.txt")
+        try:
+            for major_name, flag, course in \
+                                self.file_reading_gen(filename, fields=3, \
+                                                      sep="\t", header=True):
+                major = Major(major_name, flag, course)
+                self.majors.append(major)
+        except ValueError:
+            print("Error reading majors file.  Exiting.")
+            return
+ 
     def file_reading_gen(self, path, fields, sep=',', header=False):
         """ This generator yields each line of an input file one at a time
             as long as the file exists, and each line has the exact number
@@ -136,7 +139,7 @@ class Repository:
 
 
 class Student():
-    """ Implementation of students class, derived from class Person """
+    """ Implementation of students class """
     def __init__(self, cwid, name, major=None):
         self.cwid = cwid
         self.name = name
@@ -148,7 +151,7 @@ class Student():
         self.grade_list[course_id] = grade
 
 class Instructor():
-    """ Implementation of instructors class, derived from class Person """
+    """ Implementation of instructors class """
     def __init__(self, cwid, name, department=None):
         """ Initialization code for Instructor class """
         self.cwid = cwid
@@ -159,6 +162,14 @@ class Instructor():
     def add_course(self, course_id, increment=1):
         """ Manually add a course to the instructor """
         self.course_list[course_id] += increment
+
+
+class Major():
+    """ Implementation of Majors class """
+    def __init__(self, major, flag, course):
+        self.major = major
+        self.flag = flag
+        self.course = course
 
 def main():
     """ Run some testing code to display data from repositories """
@@ -172,32 +183,6 @@ def main():
         result_table = stevens.pretty_print("instructors")
         print(result_table)
         result_table = stevens.pretty_print("students")
-        print(result_table)
-
-    print("Missing University")
-
-    try:
-        missing = Repository("./Missing")
-    except FileNotFoundError:
-        print("ERROR:  Unable to access Missing University")
-    else:
-        result_table = missing.pretty_print("instructors")
-        print(result_table)
-        result_table = missing.pretty_print("students")
-        print(result_table)
-        
-    print("Corrupted University")
-    
-    try:
-        corrupted = Repository("./Corrupted")
-    except FileNotFoundError:
-        print("ERROR:  Unable to access Corrupted University")
-    else:
-        result_table = corrupted.pretty_print("instructors")
-        result_table.print_empty = False
-        print(result_table)
-        result_table = corrupted.pretty_print("students")
-        result_table.print_empty = False
         print(result_table)
 
 if __name__ == "__main__":

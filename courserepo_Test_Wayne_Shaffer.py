@@ -1,6 +1,6 @@
 """ Test cases for HW09 """
 import unittest
-from HW09_Wayne_Shaffer import Repository, Student, Instructor
+from courserepo_Wayne_Shaffer import Repository, Student, Instructor
 
 
 class TestRepository(unittest.TestCase):
