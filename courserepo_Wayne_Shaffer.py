@@ -19,11 +19,14 @@ class Repository:
         
         self.instructors = []
         self.students = []
-        self.majors = []
+        self.majors = defaultdict(dict)
 
-        self.read_data_files(dir_path)
+        self.read_majors(dir_path)
+        self.read_instructors(dir_path)
+        self.read_students(dir_path)
+        self.read_grades(dir_path)
 
-    def read_data_files(self, dir_path):
+    def read_instructors(self, dir_path):
         #read instructors from file
         filename = join(dir_path, "instructors.txt")
         try:
@@ -36,6 +39,7 @@ class Repository:
             print("Error reading instructors.txt.  Exiting.")
             return
         
+    def read_students(self, dir_path):
         #read students from file
         filename = join(dir_path, "students.txt")
         try:
@@ -43,11 +47,18 @@ class Repository:
                     self.file_reading_gen(filename, fields=3, sep=";", \
                                           header=True):
                 student = Student(cwid, name, major)
+                
+                #initialize student's course list with the
+                #required and elective courses, no grade.
+                for course in self.majors[major]:
+                    student.add_grade(course)
+
                 self.students.append(student)
         except ValueError:
             print("Error reading students.txt.  Exiting.")
             return
 
+    def read_grades(self, dir_path):
         #read student grades from file
         filename = join(dir_path, "grades.txt")
         for cwid, course_id, grade, instructor_id in \
@@ -71,14 +82,14 @@ class Repository:
             if not found:
                 print(f"ERROR: No instructor with CWID {instructor_id} in instructors.txt. Skipped.")
 
+    def read_majors(self, dir_path):
         #read majors from file
         filename = join(dir_path, "majors.txt")
         try:
-            for major_name, flag, course in \
+            for major, flag, course in \
                                 self.file_reading_gen(filename, fields=3, \
                                                       sep="\t", header=True):
-                major = Major(major_name, flag, course)
-                self.majors.append(major)
+                self.majors[major][course] = flag
         except ValueError:
             print("Error reading majors file.  Exiting.")
             return
@@ -118,20 +129,50 @@ class Repository:
 
     def pretty_print(self, collection):
         """ Use PrettyTable to print a table of files and statistics for them. """
-        if(collection == "instructors"):
+        if(collection == "majors"):
+            table = PrettyTable(field_names=["Dept", "Required", "Electives"])
+            for major in self.majors:
+                required_courses = [course for course in self.majors[major].keys()
+                                if self.majors[major][course] == "R"]
+                elective_courses = [course for course in self.majors[major].keys()
+                                if self.majors[major][course] == "E"]
+                table.add_row(major, required_courses, elective_courses)
+        
+        elif(collection == "instructors"):
             table = PrettyTable(field_names=["CWID", "Name", "Dept", \
                                              "Course", "Students"])
             for instructor in self.instructors:
                 for course_id in instructor.course_list:
                     table.add_row([instructor.cwid, instructor.name, \
                                    instructor.department, course_id, instructor.course_list[course_id]])
+        
         elif (collection == "students"):
-            table = PrettyTable(field_names=["CWID", "Name", "Completed Courses"])
+            table = PrettyTable(field_names=["CWID", "Name", "Major", \
+                                             "Completed Courses", \
+                                             "Remaining Required", \
+                                             "Remaining Electives"])
             for student in self.students:
-                courses = []
-                for course_id in sorted(student.grade_list):
-                    courses += [course_id]
-                table.add_row([student.cwid, student.name, courses])
+                completed_courses = []
+                required = []
+                electives = []
+                
+                #build lists for completed, remaining required/elective
+                completed_courses = [course for course in student.course_list.keys() \
+                                     if student.course_list[course] != None]
+                try:
+                    required = [course for course in student.course_list.keys() \
+                                if self.majors[student.major][course] == "R"]
+                except KeyError:
+                    print("Student took a class not listed in his/her major!")
+                try:
+                    electives = [course for course in student.course_list.keys() \
+                                 if self.majors[student.major][course] == "E"]
+                except KeyError:
+                    print("Student took an elective not in his/her major!")
+                        
+                table.add_row([student.cwid, student.name, student.major, \
+                               completed_courses, required, electives])
+        
         else:
             raise ValueError("ERROR: Invalid table type for PrettyPrint")
 
@@ -144,11 +185,13 @@ class Student():
         self.cwid = cwid
         self.name = name
         self.major = major
-        self.grade_list = dict()
+        #self.grade_list = dict()
+        self.course_list = dict()
         
     def add_grade(self, course_id, grade=None):
         """ Manually add a grade to the student """
-        self.grade_list[course_id] = grade
+        #self.grade_list[course_id] = grade
+        self.course_list[course_id] = grade
 
 class Instructor():
     """ Implementation of instructors class """
@@ -164,12 +207,17 @@ class Instructor():
         self.course_list[course_id] += increment
 
 
-class Major():
-    """ Implementation of Majors class """
-    def __init__(self, major, flag, course):
-        self.major = major
-        self.flag = flag
-        self.course = course
+#class Major():
+#    """ Implementation of Majors class """
+#    def __init__(self, major, flag, course):
+#        self.major = major
+#        self.courses = dict()
+
+#        self.add_course(course, flag)
+        
+#    def add_course(self, course, flag):
+#        """ Adds, or updates, a course in the selected major. """
+#        self.courses[course] = flag
 
 def main():
     """ Run some testing code to display data from repositories """
