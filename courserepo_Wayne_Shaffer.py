@@ -136,7 +136,7 @@ class Repository:
                                 if self.majors[major][course] == "R"]
                 elective_courses = [course for course in self.majors[major].keys()
                                 if self.majors[major][course] == "E"]
-                table.add_row(major, required_courses, elective_courses)
+                table.add_row([major, required_courses, elective_courses])
         
         elif(collection == "instructors"):
             table = PrettyTable(field_names=["CWID", "Name", "Dept", \
@@ -152,24 +152,32 @@ class Repository:
                                              "Remaining Required", \
                                              "Remaining Electives"])
             for student in self.students:
-                completed_courses = []
-                required = []
-                electives = []
+                #completed_courses = []
+                #required = []
+                #electives = []
                 
-                #build lists for completed, remaining required/elective
-                completed_courses = [course for course in student.course_list.keys() \
-                                     if student.course_list[course] != None]
-                try:
-                    required = [course for course in student.course_list.keys() \
-                                if self.majors[student.major][course] == "R"]
-                except KeyError:
-                    print("Student took a class not listed in his/her major!")
-                try:
-                    electives = [course for course in student.course_list.keys() \
-                                 if self.majors[student.major][course] == "E"]
-                except KeyError:
-                    print("Student took an elective not in his/her major!")
-                        
+                #build list for completed (valid passing grade) courses
+                completed_courses = [course for course in student.course_grades.keys() \
+                                     if student.course_grades[course] in \
+                                         ["A", "A-", "B+", "B", "B-", "C+", "C"]
+                                    ]
+                #try: #build list of required courses (failing/no grade) courses
+                required = [course for course in self.majors[student.major] \
+                                #if (student.course_grades[course] not in completed_courses)
+                                if (self.majors[student.major][course] == "R") \
+                                    and (course not in completed_courses)
+                                ]
+                #except KeyError:
+                #    print("Student took a class not listed in his/her major!")
+                
+                #try: #Build list of electives (failing/no grade) remaining
+                electives = [course for course in self.majors[student.major] \
+                                 if (self.majors[student.major][course] == "E") \
+                                     and (course not in completed_courses)
+                                ]
+                #except KeyError:
+                #    print("Student took an elective not in his/her major!")
+
                 table.add_row([student.cwid, student.name, student.major, \
                                completed_courses, required, electives])
         
@@ -185,13 +193,11 @@ class Student():
         self.cwid = cwid
         self.name = name
         self.major = major
-        #self.grade_list = dict()
-        self.course_list = dict()
+        self.course_grades = dict()
         
     def add_grade(self, course_id, grade=None):
         """ Manually add a grade to the student """
-        #self.grade_list[course_id] = grade
-        self.course_list[course_id] = grade
+        self.course_grades[course_id] = grade
 
 class Instructor():
     """ Implementation of instructors class """
@@ -206,19 +212,6 @@ class Instructor():
         """ Manually add a course to the instructor """
         self.course_list[course_id] += increment
 
-
-#class Major():
-#    """ Implementation of Majors class """
-#    def __init__(self, major, flag, course):
-#        self.major = major
-#        self.courses = dict()
-
-#        self.add_course(course, flag)
-        
-#    def add_course(self, course, flag):
-#        """ Adds, or updates, a course in the selected major. """
-#        self.courses[course] = flag
-
 def main():
     """ Run some testing code to display data from repositories """
     print("Stevens Institute of Technology")
@@ -228,10 +221,17 @@ def main():
     except FileNotFoundError:
         print("ERROR:  Unable to access Stevens repository")
     else:
-        result_table = stevens.pretty_print("instructors")
-        print(result_table)
-        result_table = stevens.pretty_print("students")
-        print(result_table)
+        majors_table = stevens.pretty_print("majors")
+        student_table = stevens.pretty_print("students")
+        instructor_table = stevens.pretty_print("instructors")
+        print("\nMajors Summary")
+        print(majors_table)
+        print("\nStudents Summary")
+        print(student_table)
+        print("\nInstructors Summary")
+        print(instructor_table)
+        print("\n\n")
 
+        
 if __name__ == "__main__":
     main()
