@@ -7,7 +7,7 @@ class TestRepository(unittest.TestCase):
     """ Class containing unit test cases for class Repository """
     def setUp(self):
         """ Initial setup code for unit tests """
-        self.test_repo = None
+        self.test_repo = Repository("./Stevens")
         
     def test_bad_path(self):
         """ Test cases for bad directory path """
@@ -17,17 +17,17 @@ class TestRepository(unittest.TestCase):
             print("ERROR:  Unable to access ./Missing")
             self.assertTrue(True)
         
-    def test_corrupted_data(self):
-        """ Test case for corrupted data """
-        try:
-            self.test_repo = Repository("./Corrupted")
-        except ValueError:
-            print("ERROR: Corrupted files found importing Corrupted University data")
-            self.assertTrue(True)
+    #def test_corrupted_data(self):
+    #    """ Test case for corrupted data """
+    #    try:
+    #        self.test_repo = Repository("./Corrupted")
+    #    except ValueError:
+    #        print("ERROR: Corrupted files found importing Corrupted University data")
+    #        self.assertTrue(True)
 
     def test_pretty_print(self):
         """ Test cases for pretty_print with a good dataset (Stevens) """
-        self.test_repo = Repository("./Stevens")
+        #self.test_repo = Repository("./Stevens")
         
         #test instructors table
         table_rows = ["98765  Einstein, A  SFEN  SSW 567  4", \
@@ -58,6 +58,23 @@ class TestRepository(unittest.TestCase):
         ]
 
         result_table = self.test_repo.pretty_print("majors")
+        result_table.border = False
+        result_table.header = False
+        index = 0
+        for row in result_table:
+            row_str = row.get_string().strip()
+            self.assertTrue(row_str == table_rows[index])
+            index += 1
+
+    def test_instructor_table_db(self):
+        """ Test case to read Instructor Summary data from database """
+        table_rows = ['98762   "Hawking, S"    CS      "CS 501"        1', \
+                      '98762   "Hawking, S"    CS      "CS 546"        2', \
+                      '98762   "Hawking, S"    CS      "CS 570"        1', \
+                      '98763   "Rowland, J"    SFEN    "SSW 555"       1', \
+                      '98763   "Rowland, J"    SFEN    "SSW 810"       4'
+                     ]
+        result_table = self.test_repo.instructor_table_db("./database")
         result_table.border = False
         result_table.header = False
         index = 0

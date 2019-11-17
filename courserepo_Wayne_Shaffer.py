@@ -5,6 +5,7 @@
 from os.path import isdir, join
 from collections import defaultdict
 from prettytable import PrettyTable
+import sqlite3
 
 
 class Repository:
@@ -31,7 +32,7 @@ class Repository:
         filename = join(dir_path, "instructors.txt")
         try:
             for cwid, name, department in \
-                    self.file_reading_gen(filename, fields=3, sep="|", \
+                    self.file_reading_gen(filename, fields=3, sep="\t", \
                                           header=True):
                 instructor = Instructor(cwid, name, department)
                 self.instructors.append(instructor)
@@ -44,7 +45,7 @@ class Repository:
         filename = join(dir_path, "students.txt")
         try:
             for cwid, name, major in \
-                    self.file_reading_gen(filename, fields=3, sep=";", \
+                    self.file_reading_gen(filename, fields=3, sep="\t", \
                                           header=True):
                 student = Student(cwid, name, major)
                 
@@ -62,7 +63,7 @@ class Repository:
         #read student grades from file
         filename = join(dir_path, "grades.txt")
         for cwid, course_id, grade, instructor_id in \
-                    self.file_reading_gen(filename, fields=4, sep="|", \
+                    self.file_reading_gen(filename, fields=4, sep="\t", \
                                           header=True):
             #add grade to the appropriate student's class
             found = False
@@ -119,6 +120,20 @@ class Repository:
 
                 line_number += 1
 
+    def instructor_table_db(self, db_path):
+        """ Read Instructor data from SQLite database provided by db_path """
+        DB_FILE = join(db_path, "810_startup.db")
+        db = sqlite3.connect(DB_FILE)
+
+        table = PrettyTable(field_names=["CWID", "Name", "Dept", "Course", "Students"])
+
+        for row in db.execute("select i.cwid, i.name, i.dept, g.course, count(*) \
+                               as NumStudents from instructors i join grades g \
+                               on i.cwid=g.instructorcwid group by course"):
+            table.add_row(list(row))
+
+        return table
+    
     def add_instructor(self, cwid, name):
         """ Manually add an instructor to the repository """
         self.instructors.append(Instructor(cwid, name))
@@ -217,20 +232,24 @@ def main():
     print("Stevens Institute of Technology")
     
     try:
-        stevens = Repository("./Stevens")
+        stevens = Repository("./DBImports")
     except FileNotFoundError:
         print("ERROR:  Unable to access Stevens repository")
     else:
         majors_table = stevens.pretty_print("majors")
         student_table = stevens.pretty_print("students")
         instructor_table = stevens.pretty_print("instructors")
+        instructor_db_table = stevens.instructor_table_db("./database")
         print("\nMajors Summary")
         print(majors_table)
         print("\nStudents Summary")
         print(student_table)
         print("\nInstructors Summary")
         print(instructor_table)
+        print("\nInstructors Summary (from DB)")
+        print(instructor_db_table)
         print("\n\n")
+        
 
         
 if __name__ == "__main__":
