@@ -232,7 +232,7 @@ def main():
     print("Stevens Institute of Technology")
     
     try:
-        stevens = Repository("./DBImports")
+        stevens = Repository("./Stevens")
     except FileNotFoundError:
         print("ERROR:  Unable to access Stevens repository")
     else:
